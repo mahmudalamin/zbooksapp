@@ -1,0 +1,12 @@
+{
+  "siteName": "Zbooks",
+  "siteDescription": "The best ecommerce store",
+  "currency": "USD",
+  "taxRate": 0.08,
+  "shippingRate": 9.99,
+  "freeShippingThreshold": 50,
+  "emailNotifications": true,
+  "lowStockThreshold": 5,
+  "allowGuestCheckout": true,
+  "maintenanceMode": false
+}
