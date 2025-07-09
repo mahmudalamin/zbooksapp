@@ -1,9 +1,10 @@
 // app/admin/categories/page.tsx
+export const dynamic = 'force-dynamic';
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import CategoriesTable from '@/components/admin/CategoriesTable'
-export const dynamic = 'force-dynamic';
+
 export default async function CategoriesPage() {
   const categories = await prisma.category.findMany({
     include: {
