@@ -1,25 +1,8 @@
-<<<<<<< HEAD
-// app/api/admin/coupons/[id]/route.ts - Complete file
-=======
-
 // app/api/admin/coupons/[id]/route.ts
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-<<<<<<< HEAD
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    
-    const coupon = await prisma.coupon.findUnique({
-      where: { id }
-=======
 import { z } from 'zod'
 
 const couponUpdateSchema = z.object({
@@ -36,12 +19,13 @@ const couponUpdateSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
+    
     const coupon = await prisma.coupon.findUnique({
-      where: { id: params.id }
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
+      where: { id }
     })
 
     if (!coupon) {
@@ -56,24 +40,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-<<<<<<< HEAD
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('=== COUPON UPDATE API CALLED ===')
     
-=======
-  { params }: { params: { id: string } }
-) {
-  try {
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
     const session = await getServerSession(authOptions)
     
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-<<<<<<< HEAD
     const { id } = await params
     const body = await request.json()
     console.log('Raw request body:', JSON.stringify(body, null, 2))
@@ -170,64 +147,22 @@ export async function PUT(
       error: 'Failed to update coupon',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-=======
-    const body = await request.json()
-    const validatedData = couponUpdateSchema.parse(body)
-
-    // Check if coupon code already exists (excluding current coupon)
-    if (validatedData.code) {
-      const existingCoupon = await prisma.coupon.findFirst({
-        where: {
-          code: validatedData.code,
-          NOT: { id: params.id }
-        }
-      })
-
-      if (existingCoupon) {
-        return NextResponse.json({ error: 'Coupon code already exists' }, { status: 400 })
-      }
-    }
-
-    // For free shipping, set value to 0
-    if (validatedData.type === 'FREE_SHIPPING') {
-      validatedData.value = 0
-    }
-
-    const coupon = await prisma.coupon.update({
-      where: { id: params.id },
-      data: validatedData
-    })
-
-    return NextResponse.json(coupon)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
-    }
-    return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-<<<<<<< HEAD
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('=== COUPON PATCH API CALLED ===')
     
-=======
-  { params }: { params: { id: string } }
-) {
-  try {
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
     const session = await getServerSession(authOptions)
     
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-<<<<<<< HEAD
     const { id } = await params
     const body = await request.json()
     console.log('PATCH request body:', JSON.stringify(body, null, 2))
@@ -286,28 +221,12 @@ export async function PATCH(
       error: 'Failed to update coupon',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
-=======
-    const body = await request.json()
-    
-    const coupon = await prisma.coupon.update({
-      where: { id: params.id },
-      data: body
-    })
-
-    return NextResponse.json(coupon)
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-<<<<<<< HEAD
   { params }: { params: Promise<{ id: string }> }
-=======
-  { params }: { params: { id: string } }
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -316,105 +235,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-<<<<<<< HEAD
     const { id } = await params
 
     await prisma.coupon.delete({
       where: { id }
-=======
-    await prisma.coupon.delete({
-      where: { id: params.id }
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
     })
 
     return NextResponse.json({ message: 'Coupon deleted successfully' })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete coupon' }, { status: 500 })
   }
-<<<<<<< HEAD
 }
-=======
-}
-
-// app/api/coupons/validate/route.ts (Public endpoint for validating coupons)
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-
-export async function POST(request: NextRequest) {
-  try {
-    const { code, cartTotal } = await request.json()
-
-    if (!code) {
-      return NextResponse.json({ error: 'Coupon code is required' }, { status: 400 })
-    }
-
-    const coupon = await prisma.coupon.findUnique({
-      where: { code: code.toUpperCase() }
-    })
-
-    if (!coupon) {
-      return NextResponse.json({ error: 'Invalid coupon code' }, { status: 404 })
-    }
-
-    // Check if coupon is active
-    if (!coupon.isActive) {
-      return NextResponse.json({ error: 'Coupon is not active' }, { status: 400 })
-    }
-
-    // Check if coupon is expired
-    if (coupon.validUntil && new Date(coupon.validUntil) < new Date()) {
-      return NextResponse.json({ error: 'Coupon has expired' }, { status: 400 })
-    }
-
-    // Check if coupon is not yet valid
-    if (new Date(coupon.validFrom) > new Date()) {
-      return NextResponse.json({ error: 'Coupon is not yet valid' }, { status: 400 })
-    }
-
-    // Check usage limit
-    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-      return NextResponse.json({ error: 'Coupon usage limit exceeded' }, { status: 400 })
-    }
-
-    // Check minimum amount
-    if (coupon.minimumAmount && cartTotal < coupon.minimumAmount) {
-      return NextResponse.json({ 
-        error: `Minimum order amount of $${coupon.minimumAmount.toFixed(2)} required` 
-      }, { status: 400 })
-    }
-
-    // Calculate discount
-    let discountAmount = 0
-    let freeShipping = false
-
-    switch (coupon.type) {
-      case 'PERCENTAGE':
-        discountAmount = (cartTotal * coupon.value) / 100
-        if (coupon.maximumDiscount) {
-          discountAmount = Math.min(discountAmount, coupon.maximumDiscount)
-        }
-        break
-      case 'FIXED_AMOUNT':
-        discountAmount = Math.min(coupon.value, cartTotal)
-        break
-      case 'FREE_SHIPPING':
-        freeShipping = true
-        break
-    }
-
-    return NextResponse.json({
-      valid: true,
-      coupon: {
-        id: coupon.id,
-        code: coupon.code,
-        type: coupon.type,
-        value: coupon.value,
-        discountAmount,
-        freeShipping
-      }
-    })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to validate coupon' }, { status: 500 })
-  }
-}
->>>>>>> 4770f04f4af9ae829292e004a72dd9d7d08a5095
