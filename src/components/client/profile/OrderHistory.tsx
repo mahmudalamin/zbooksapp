@@ -123,16 +123,13 @@ export default function OrderHistory({ orders }: OrderHistoryProps) {
 
               <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-200">
                 <Link
-                  href={`/orders/${order.id}`}
+                  href={`orders/${order.id}`}
                   className="inline-flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-800"
                 >
                   <Eye className="w-4 h-4 mr-1" />
                   View Details
                 </Link>
-                <button className="inline-flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-800">
-                  <Download className="w-4 h-4 mr-1" />
-                  Download Invoice
-                </button>
+                
               </div>
             </div>
           ))}

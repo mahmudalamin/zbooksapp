@@ -36,9 +36,17 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: address || {
+      firstName: '',
+      lastName: '',
+      company: '',
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'United States',
       type: 'SHIPPING',
       isDefault: false,
-      country: 'United States',
     }
   })
 
@@ -50,19 +58,31 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
         : '/api/profile/addresses'
       const method = address ? 'PUT' : 'POST'
 
+      console.log('Submitting address:', { url, method, data })
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
 
-      if (!response.ok) throw new Error('Failed to save address')
+      console.log('Response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ 
+          error: 'Failed to save address' 
+        }))
+        console.error('Server error:', errorData)
+        throw new Error(errorData.error || errorData.details || 'Failed to save address')
+      }
 
       const savedAddress = await response.json()
-      toast.success(address ? 'Address updated!' : 'Address added!')
+      console.log('Saved address:', savedAddress)
+      
       onSuccess(savedAddress)
-    } catch (error) {
-      toast.error('Failed to save address')
+    } catch (error: any) {
+      console.error('Address submission error:', error)
+      toast.error(error.message || 'Failed to save address')
     } finally {
       setIsSubmitting(false)
     }
@@ -91,6 +111,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <input
               {...form.register('firstName')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter first name"
             />
             {form.formState.errors.firstName && (
               <p className="text-red-500 text-sm mt-1">
@@ -106,6 +127,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <input
               {...form.register('lastName')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter last name"
             />
             {form.formState.errors.lastName && (
               <p className="text-red-500 text-sm mt-1">
@@ -122,6 +144,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
           <input
             {...form.register('company')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter company name"
           />
         </div>
 
@@ -132,6 +155,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
           <input
             {...form.register('address1')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Street address"
           />
           {form.formState.errors.address1 && (
             <p className="text-red-500 text-sm mt-1">
@@ -147,6 +171,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
           <input
             {...form.register('address2')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Apartment, suite, etc."
           />
         </div>
 
@@ -158,6 +183,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <input
               {...form.register('city')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="City"
             />
             {form.formState.errors.city && (
               <p className="text-red-500 text-sm mt-1">
@@ -173,6 +199,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <input
               {...form.register('state')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="State"
             />
             {form.formState.errors.state && (
               <p className="text-red-500 text-sm mt-1">
@@ -188,6 +215,7 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <input
               {...form.register('postalCode')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="ZIP code"
             />
             {form.formState.errors.postalCode && (
               <p className="text-red-500 text-sm mt-1">
@@ -211,6 +239,10 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
             <option value="Australia">Australia</option>
             <option value="Germany">Germany</option>
             <option value="France">France</option>
+            <option value="Spain">Spain</option>
+            <option value="Italy">Italy</option>
+            <option value="Netherlands">Netherlands</option>
+            <option value="Mexico">Mexico</option>
           </select>
           {form.formState.errors.country && (
             <p className="text-red-500 text-sm mt-1">
@@ -244,25 +276,25 @@ export default function AddressForm({ address, onSuccess, onCancel }: AddressFor
           </label>
         </div>
 
-        <div className="flex justify-end space-x-4 pt-4">
+        <div className="flex justify-end space-x-4 pt-4 border-t">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Saving...' : 'Save Address'}
+            {isSubmitting ? 'Saving...' : (address ? 'Update Address' : 'Save Address')}
           </button>
         </div>
       </form>
     </div>
   )
 }
-

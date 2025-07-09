@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile, readFile } from 'fs/promises'
+import { writeFile, readFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { existsSync } from 'fs'
 
 export async function GET() {
   try {
@@ -13,7 +14,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Read settings from a JSON file or database
     const settingsPath = join(process.cwd(), 'data', 'settings.json')
     
     try {
@@ -21,6 +21,7 @@ export async function GET() {
       const settings = JSON.parse(settingsData)
       return NextResponse.json(settings)
     } catch (error) {
+      console.log('Settings file not found, returning default settings')
       // Return default settings if file doesn't exist
       const defaultSettings = {
         siteName: process.env.SITE_NAME || 'My Ecommerce Store',
@@ -52,20 +53,35 @@ export async function POST(request: NextRequest) {
 
     const settings = await request.json()
     
-    // Save settings to a JSON file (in production, you'd save to database)
-    const settingsPath = join(process.cwd(), 'data', 'settings.json')
-    
-    // Ensure data directory exists
-    try {
-      await readFile(join(process.cwd(), 'data'))
-    } catch {
-      const { mkdir } = await import('fs/promises')
-      await mkdir(join(process.cwd(), 'data'), { recursive: true })
+    // Validate settings object
+    if (!settings || typeof settings !== 'object') {
+      return NextResponse.json({ error: 'Invalid settings data' }, { status: 400 })
     }
     
-    await writeFile(settingsPath, JSON.stringify(settings, null, 2))
+    const dataDir = join(process.cwd(), 'data')
+    const settingsPath = join(dataDir, 'settings.json')
     
-    return NextResponse.json({ success: true })
+    // Ensure data directory exists
+    if (!existsSync(dataDir)) {
+      try {
+        await mkdir(dataDir, { recursive: true })
+        console.log('Created data directory')
+      } catch (mkdirError) {
+        console.error('Error creating data directory:', mkdirError)
+        return NextResponse.json({ error: 'Failed to create data directory' }, { status: 500 })
+      }
+    }
+    
+    // Save settings to JSON file
+    try {
+      await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8')
+      console.log('Settings saved successfully')
+      return NextResponse.json({ success: true, message: 'Settings saved successfully' })
+    } catch (writeError) {
+      console.error('Error writing settings file:', writeError)
+      return NextResponse.json({ error: 'Failed to write settings file' }, { status: 500 })
+    }
+    
   } catch (error) {
     console.error('Error saving settings:', error)
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })

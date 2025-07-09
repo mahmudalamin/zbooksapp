@@ -108,7 +108,7 @@ export default function Contact() {
                   <EnvelopeIcon className="h-6 w-6 text-blue-500 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Email</p>
-                    <p className="text-gray-600">hello@yourcompany.com</p>
+                    <p className="text-gray-600">info@zbooks.co.uk</p>
                   </div>
                 </div>
                 
@@ -116,7 +116,7 @@ export default function Contact() {
                   <PhoneIcon className="h-6 w-6 text-green-500 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Phone</p>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
+                    <p className="text-gray-600">+44 (077) 123-4567</p>
                   </div>
                 </div>
                 
@@ -124,7 +124,7 @@ export default function Contact() {
                   <MapPinIcon className="h-6 w-6 text-red-500 mr-4" />
                   <div>
                     <p className="font-medium text-gray-900">Address</p>
-                    <p className="text-gray-600">123 Business St, Suite 100<br />City, State 12345</p>
+                    <p className="text-gray-600">Belfast Driver, Leigh-on-Sea<br />City, Essex <br /> UK</p>
                   </div>
                 </div>
               </div>

@@ -9,7 +9,7 @@ export default async function AdminProfilePage() {
   const session = await getServerSession(authOptions)
   
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/')
   }
 
   const user = await prisma.user.findUnique({
@@ -26,7 +26,7 @@ export default async function AdminProfilePage() {
   })
 
   if (!user) {
-    redirect('/auth/signin')
+    redirect('/')
   }
 
   return (

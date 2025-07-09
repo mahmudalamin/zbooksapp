@@ -1,7 +1,7 @@
 {
-  "siteName": "Zbooks",
+  "siteName": "zBooks.com",
   "siteDescription": "The best ecommerce store",
-  "currency": "USD",
+  "currency": "CAD",
   "taxRate": 0.08,
   "shippingRate": 9.99,
   "freeShippingThreshold": 50,

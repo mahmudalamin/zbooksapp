@@ -7,6 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Settings {
+  id                      String   @id @default(cuid())
+  siteName               String   @default("My Ecommerce Store")
+  siteDescription        String?
+  currency               String   @default("USD")
+  taxRate                Float    @default(0)
+  shippingRate           Float    @default(0)
+  freeShippingThreshold  Float    @default(0)
+  emailNotifications     Boolean  @default(true)
+  lowStockThreshold      Int      @default(5)
+  allowGuestCheckout     Boolean  @default(true)
+  maintenanceMode        Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

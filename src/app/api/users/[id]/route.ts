@@ -5,12 +5,12 @@ import bcrypt from 'bcryptjs';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
     const { name, email, role, password } = body;
-    const { id } = params;
+    const { id } = await params;
 
     if (!name || !email || !role) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -60,10 +60,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await prisma.user.delete({
       where: { id }

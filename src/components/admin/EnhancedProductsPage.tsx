@@ -6,8 +6,30 @@ import { Plus, Upload, Grid, List } from 'lucide-react'
 import ProductsTable from '@/components/admin/ProductsTable'
 import ProductCards from '@/components/admin/ProductCards'
 import BulkProductImport from '@/components/admin/BulkProductImport'
+import { Product } from '@/types'
 
-interface Product {
+interface Category {
+  id: string
+  name: string
+}
+
+// Type that matches exactly what the Prisma query returns
+type ProductWithRelations = Omit<Product, 'category' | '_count'> & {
+  category: {
+    name: string
+  } | null
+  _count: {
+    orderItems: number
+  }
+}
+
+interface EnhancedProductsPageProps {
+  initialProducts: ProductWithRelations[]
+  categories: Category[]
+}
+
+// Type that matches what the components expect
+type ComponentProduct = {
   id: string
   name: string
   slug: string
@@ -26,19 +48,25 @@ interface Product {
   }
 }
 
-interface Category {
-  id: string
-  name: string
-}
-
-interface EnhancedProductsPageProps {
-  initialProducts: Product[]
-  categories: Category[]
-}
-
 export default function EnhancedProductsPage({ initialProducts, categories }: EnhancedProductsPageProps) {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [showBulkImport, setShowBulkImport] = useState(false)
+
+  // Convert Prisma types to component-compatible types
+  const convertedProducts: ComponentProduct[] = initialProducts.map(product => ({
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: product.price,
+    comparePrice: product.comparePrice || undefined,
+    stock: product.stock,
+    isActive: product.isActive,
+    isFeatured: product.isFeatured,
+    createdAt: product.createdAt,
+    images: product.images,
+    category: product.category,
+    _count: product._count
+  }))
 
   return (
     <div className="space-y-6">
@@ -94,9 +122,9 @@ export default function EnhancedProductsPage({ initialProducts, categories }: En
 
       {/* Products View */}
       {viewMode === 'table' ? (
-        <ProductsTable products={initialProducts} />
+        <ProductsTable products={convertedProducts} />
       ) : (
-        <ProductCards products={initialProducts} />
+        <ProductCards products={convertedProducts} />
       )}
 
       {/* Bulk Import Modal */}

@@ -1,44 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+// src/app/api/admin/orders/[id]/status/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { OrderService } from '@/lib/services/order.service';
+import { OrderStatus } from '@/types/index';
 
-export async function PATCH(
+export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { id } = await params
+    const { status, notes } = await request.json();
+
+    if (!Object.values(OrderStatus).includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid order status' },
+        { status: 400 }
+      );
     }
 
-    const { status, notes } = await request.json()
-    
-    // Update order status
-    const order = await prisma.order.update({
-      where: { id: params.id },
-      data: { status },
-      include: {
-        user: { select: { name: true, email: true } },
-        orderItems: {
-          include: { product: { select: { name: true } } }
-        }
-      }
-    })
+    const updatedOrder = await OrderService.updateOrderStatus(
+      id,
+      status as OrderStatus,
+      notes
+    );
 
-    // Create order history entry
-    await prisma.orderHistory.create({
-      data: {
-        orderId: params.id,
-        status,
-        notes,
-      }
-    })
-
-    return NextResponse.json(order)
+    return NextResponse.json(updatedOrder);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+    console.error('Error updating order status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update order status' },
+      { status: 500 }
+    );
   }
 }

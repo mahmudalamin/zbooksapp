@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Edit, ArrowLeft, Eye, ShoppingCart, Package, DollarSign, BarChart3 } from 'lucide-react'
 import { prisma } from '@/lib/db'
+import { $Enums } from '@prisma/client'
 
 interface ProductDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { id } = await params
+  const { id } = await params;
   const product = await prisma.product.findUnique({
     where: { id },
     include: {
@@ -52,6 +53,27 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   const totalRevenue = product.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const totalUnitsSold = product.orderItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  const getStatusStyles = (status: $Enums.OrderStatus) => {
+    switch (status) {
+      case $Enums.OrderStatus.DELIVERED:
+        return 'bg-green-100 text-green-800'
+      case $Enums.OrderStatus.PENDING:
+        return 'bg-yellow-100 text-yellow-800'
+      case $Enums.OrderStatus.CANCELLED:
+        return 'bg-red-100 text-red-800'
+      case $Enums.OrderStatus.CONFIRMED:
+        return 'bg-blue-100 text-blue-800'
+      case $Enums.OrderStatus.PROCESSING:
+        return 'bg-purple-100 text-purple-800'
+      case $Enums.OrderStatus.SHIPPED:
+        return 'bg-indigo-100 text-indigo-800'
+      case $Enums.OrderStatus.REFUNDED:
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -199,12 +221,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                           {new Date(orderItem.order.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            orderItem.order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                            orderItem.order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                            orderItem.order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyles(orderItem.order.status)}`}>
                             {orderItem.order.status}
                           </span>
                         </td>

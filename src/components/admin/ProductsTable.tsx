@@ -7,15 +7,18 @@ import { Edit, Trash2, Eye, MoreHorizontal } from 'lucide-react'
 import BulkActions from './BulkActions'
 import toast from 'react-hot-toast'
 
-interface Product {
+// Use a type that matches what we're actually passing from EnhancedProductsPage
+type ProductTableItem = {
   id: string
   name: string
   slug: string
   price: number
+  comparePrice?: number
   stock: number
   isActive: boolean
   isFeatured: boolean
   createdAt: Date
+  images: string[]
   category?: {
     name: string
   } | null
@@ -25,7 +28,7 @@ interface Product {
 }
 
 interface ProductsTableProps {
-  products: Product[]
+  products: ProductTableItem[]
 }
 
 export default function ProductsTable({ products: initialProducts }: ProductsTableProps) {

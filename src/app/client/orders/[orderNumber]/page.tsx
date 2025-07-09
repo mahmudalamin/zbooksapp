@@ -1,5 +1,5 @@
 // app/orders/[orderNumber]/page.tsx (Order Detail Page)
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
@@ -30,9 +30,9 @@ const statusColors = {
 async function getOrder(orderNumber: string) {
   const session = await getServerSession(authOptions)
   
-  if (!session?.user) {
-    return null
-  }
+ if (!session?.user) {
+  redirect('/')
+}
 
   const order = await prisma.order.findFirst({
     where: {
@@ -60,10 +60,13 @@ export default async function OrderDetailPage({
   params,
   searchParams
 }: {
-  params: { orderNumber: string }
-  searchParams: { success?: string }
+  params: Promise<{ orderNumber: string }>
+  searchParams: Promise<{ success?: string }>
 }) {
-  const order = await getOrder(params.orderNumber)
+  const { orderNumber } = await params
+  const { success } = await searchParams
+  
+  const order = await getOrder(orderNumber)
 
   if (!order) {
     notFound()
@@ -71,7 +74,7 @@ export default async function OrderDetailPage({
 
   const StatusIcon = statusIcons[order.status as keyof typeof statusIcons]
   const statusColor = statusColors[order.status as keyof typeof statusColors]
-  const isSuccess = searchParams.success === 'true'
+  const isSuccess = success === 'true'
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,7 +98,7 @@ export default async function OrderDetailPage({
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Link
-              href="/orders"
+              href="/client/orders"
               className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="mr-2" size={20} />
@@ -212,7 +215,7 @@ export default async function OrderDetailPage({
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/products/${item.product.slug}`}
+                      href={`/client/products/${item.product.slug}`}
                       className="font-medium text-gray-900 hover:text-blue-600 line-clamp-2"
                     >
                       {item.product.name}
@@ -282,13 +285,15 @@ export default async function OrderDetailPage({
             </button>
           )}
           {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
-            <button className="border border-red-300 text-red-700 px-6 py-3 rounded-lg hover:bg-red-50 transition-colors">
-              Cancel Order
-            </button>
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 mr-3 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
+                </svg>
+                <p className="text-sm font-medium">If you want to cancel your order, please contact our customer service.</p>
+              </div>
+            </div>
           )}
-          <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-            Download Invoice
-          </button>
         </div>
       </div>
     </div>

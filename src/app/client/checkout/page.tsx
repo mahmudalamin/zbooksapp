@@ -1,11 +1,11 @@
-// app/checkout/page.tsx (Checkout Page)
+// app/checkout/page.tsx (Updated Checkout Page with COD)
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Lock, CreditCard, MapPin, User, Mail, Phone, Eye, EyeOff } from 'lucide-react'
+import { Lock, CreditCard, MapPin, User, Mail, Phone, Eye, EyeOff, Truck } from 'lucide-react'
 import { CartItem } from '@/types'
 import toast from 'react-hot-toast'
 import AuthModal from '@/components/auth/AuthModal'
@@ -30,6 +30,8 @@ interface PaymentInfo {
   cardholderName: string
 }
 
+type PaymentMethod = 'card' | 'cod'
+
 export default function CheckoutPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -38,6 +40,7 @@ export default function CheckoutPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [showCVV, setShowCVV] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card')
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: '',
@@ -95,31 +98,45 @@ export default function CheckoutPage() {
     setIsLoading(true)
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Validate payment method specific requirements
+      if (paymentMethod === 'card') {
+        if (!paymentInfo.cardNumber || !paymentInfo.expiryDate || !paymentInfo.cvv || !paymentInfo.cardholderName) {
+          toast.error('Please fill in all card details')
+          setIsLoading(false)
+          return
+        }
+      }
+
+      // Simulate payment processing for card payments
+      if (paymentMethod === 'card') {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
 
       // Create order
       const orderData = {
         items: cartItems,
         shippingInfo,
-        paymentInfo: {
+        paymentMethod,
+        paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+        paymentInfo: paymentMethod === 'card' ? {
           ...paymentInfo,
           cardNumber: paymentInfo.cardNumber.slice(-4) // Only store last 4 digits
-        },
+        } : null,
         subtotal,
         shipping,
         tax,
         total
       }
 
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/api/client/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create order')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create order')
       }
 
       const order = await response.json()
@@ -129,12 +146,16 @@ export default function CheckoutPage() {
       window.dispatchEvent(new Event('cartUpdated'))
 
       // Redirect to success page
-      router.push(`/orders/${order.orderNumber}?success=true`)
+      router.push(`/client/orders/${order.orderNumber}?success=true`)
       
-      toast.success('Order placed successfully!')
-    } catch (error) {
+      if (paymentMethod === 'cod') {
+        toast.success('Order placed successfully! You will pay on delivery.')
+      } else {
+        toast.success('Order placed and payment processed successfully!')
+      }
+    } catch (error: any) {
       console.error('Checkout error:', error)
-      toast.error('Failed to process order. Please try again.')
+      toast.error(error.message || 'Failed to process order. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -369,90 +390,188 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <CreditCard className="text-blue-600" size={24} />
-                  <h2 className="text-xl font-semibold text-gray-900">Payment Information</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Payment Method</h2>
                 </div>
 
-                <form onSubmit={handlePaymentSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentInfo.cardholderName}
-                      onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardholderName: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentInfo.cardNumber}
-                      onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardNumber: formatCardNumber(e.target.value) }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.expiryDate}
-                        onChange={(e) => setPaymentInfo(prev => ({ ...prev, expiryDate: formatExpiryDate(e.target.value) }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CVV
-                      </label>
-                      <div className="relative">
+                {/* Payment Method Selection */}
+                <div className="mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Credit Card Option */}
+                    <div
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        paymentMethod === 'card'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('card')}
+                    >
+                      <div className="flex items-center space-x-3">
                         <input
-                          type={showCVV ? 'text' : 'password'}
-                          value={paymentInfo.cvv}
-                          onChange={(e) => setPaymentInfo(prev => ({ ...prev, cvv: e.target.value.replace(/\D/g, '') }))}
-                          className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="123"
-                          maxLength={4}
-                          required
+                          type="radio"
+                          name="paymentMethod"
+                          value="card"
+                          checked={paymentMethod === 'card'}
+                          onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                          className="text-blue-600 focus:ring-blue-500"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowCVV(!showCVV)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showCVV ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                        <CreditCard className="text-gray-600" size={20} />
+                        <div>
+                          <h3 className="font-medium text-gray-900">Credit Card</h3>
+                          <p className="text-sm text-gray-600">Pay securely with your card</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cash on Delivery Option */}
+                    <div
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        paymentMethod === 'cod'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('cod')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cod"
+                          checked={paymentMethod === 'cod'}
+                          onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <Truck className="text-gray-600" size={20} />
+                        <div>
+                          <h3 className="font-medium text-gray-900">Cash on Delivery</h3>
+                          <p className="text-sm text-gray-600">Pay when you receive your order</p>
+                        </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={billingIsSame}
-                      onChange={(e) => setBillingIsSame(e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label className="text-sm text-gray-700">
-                      Billing address is the same as shipping address
-                    </label>
-                  </div>
+                <form onSubmit={handlePaymentSubmit} className="space-y-6">
+                  {/* Credit Card Fields - Only show when card is selected */}
+                  {paymentMethod === 'card' && (
+                    <>
+                    
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium text-yellow-800">
+                  Card payment temporarily unavailable
+                </span>
+              </div>
+            </div>
+
+                      {/* Disabled Card Fields */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          Cardholder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentInfo.cardholderName}
+                          onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardholderName: e.target.value }))}
+                          disabled
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                          placeholder="Full Name"
+                          required={paymentMethod === 'card'}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                          Card Number
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentInfo.cardNumber}
+                          onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardNumber: formatCardNumber(e.target.value) }))}
+                          disabled
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                          placeholder="1234 5678 9012 3456"
+                          maxLength={19}
+                          required={paymentMethod === 'card'}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Expiry Date
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentInfo.expiryDate}
+                            onChange={(e) => setPaymentInfo(prev => ({ ...prev, expiryDate: formatExpiryDate(e.target.value) }))}
+                            disabled
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                            placeholder="MM/YY"
+                            maxLength={5}
+                            required={paymentMethod === 'card'}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-2">
+                            CVV
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showCVV ? 'text' : 'password'}
+                              value={paymentInfo.cvv}
+                              onChange={(e) => setPaymentInfo(prev => ({ ...prev, cvv: e.target.value.replace(/\D/g, '') }))}
+                              disabled
+                              className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                              placeholder="123"
+                              maxLength={4}
+                              required={paymentMethod === 'card'}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCVV(!showCVV)}
+                              disabled
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 cursor-not-allowed"
+                            >
+                              {showCVV ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={billingIsSame}
+                          onChange={(e) => setBillingIsSame(e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label className="text-sm text-gray-700">
+                          Billing address is the same as shipping address
+                        </label>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Cash on Delivery Information */}
+                  {paymentMethod === 'cod' && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <Truck className="text-amber-600 mt-1" size={20} />
+                        <div>
+                          <h3 className="font-medium text-amber-800 mb-2">Cash on Delivery Details</h3>
+                          <ul className="text-sm text-amber-700 space-y-1">
+                            <li>• You will pay ${total.toFixed(2)} when your order is delivered</li>
+                            <li>• Our delivery partner will collect payment at your doorstep</li>
+                            <li>• Please have the exact amount ready for faster service</li>
+                            <li>• Credit cards and digital payments may also be accepted at delivery</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex space-x-4">
                     <button
@@ -474,8 +593,17 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          <Lock className="mr-2" size={18} />
-                          Complete Order
+                          {paymentMethod === 'cod' ? (
+                            <>
+                              <Truck className="mr-2" size={18} />
+                              Place Order (COD)
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="mr-2" size={18} />
+                              Complete Payment
+                            </>
+                          )}
                         </>
                       )}
                     </button>
@@ -486,7 +614,12 @@ export default function CheckoutPage() {
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Lock className="text-green-600" size={16} />
-                    <span>Your payment information is encrypted and secure</span>
+                    <span>
+                      {paymentMethod === 'cod' 
+                        ? 'Your order and personal information are secure'
+                        : 'Your payment information is encrypted and secure'
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
@@ -532,7 +665,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Shipping</span>
                   <span className="font-medium">
-                    {shipping === 0 ? 'Free' : `${shipping.toFixed(2)}`}
+                    {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -548,6 +681,27 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Payment Method Summary */}
+              {currentStep === 2 && (
+                <div className="mb-6 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    {paymentMethod === 'cod' ? (
+                      <Truck className="text-blue-600" size={16} />
+                    ) : (
+                      <CreditCard className="text-blue-600" size={16} />
+                    )}
+                    <span className="text-sm font-medium text-blue-800">
+                      {paymentMethod === 'cod' ? 'Cash on Delivery' : 'Credit Card Payment'}
+                    </span>
+                  </div>
+                  {paymentMethod === 'cod' && (
+                    <p className="text-xs text-blue-700 mt-1">
+                      Pay ${total.toFixed(2)} at delivery
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Free Shipping Notice */}
               {shipping > 0 && (

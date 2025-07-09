@@ -25,6 +25,15 @@ interface CouponsTableProps {
   coupons: Coupon[]
 }
 
+// Consistent date formatting function
+const formatDate = (date: Date | string) => {
+  const d = new Date(date)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${month}/${day}/${year}`
+}
+
 export default function CouponsTable({ coupons: initialCoupons }: CouponsTableProps) {
   const [coupons, setCoupons] = useState(initialCoupons)
   const [searchTerm, setSearchTerm] = useState('')
@@ -186,9 +195,9 @@ export default function CouponsTable({ coupons: initialCoupons }: CouponsTablePr
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div>
-                      <div>From: {new Date(coupon.validFrom).toLocaleDateString()}</div>
+                      <div>From: {formatDate(coupon.validFrom)}</div>
                       {coupon.validUntil && (
-                        <div>Until: {new Date(coupon.validUntil).toLocaleDateString()}</div>
+                        <div>Until: {formatDate(coupon.validUntil)}</div>
                       )}
                     </div>
                   </td>

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Search, ShoppingCart, User, Menu, X, ChevronDown, BookOpen, Heart, Bell } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, BookOpen, Heart, Bell, Package } from 'lucide-react'
 import { Category } from '@/types'
 import AuthModal from '../../auth/AuthModal'
 import CartSidebar from '../cart/CartSidebar'
@@ -200,21 +200,14 @@ export default function Header({ categories }: HeaderProps) {
                         My Profile
                       </Link>
                       <Link 
-                        href="/orders" 
+                        href="/client/orders" 
                         className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        <ShoppingCart size={16} className="mr-3 text-gray-400" />
+                        <Package size={16} className="mr-3 text-gray-400" />
                         My Orders
                       </Link>
-                      <Link 
-                        href="/wishlist" 
-                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <Heart size={16} className="mr-3 text-gray-400" />
-                        Wishlist
-                      </Link>
+                      
                       <hr className="my-2 border-gray-100" />
                       <button
                         onClick={() => signOut()}
@@ -383,6 +376,29 @@ export default function Header({ categories }: HeaderProps) {
                 >
                   Contact
                 </Link>
+                
+                {/* Mobile User Actions - Show only when logged in */}
+                {session && (
+                  <>
+                    <hr className="my-2 border-gray-200" />
+                    <Link 
+                      href="/client/profile" 
+                      className="flex items-center px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-300 font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User size={20} className="mr-3 text-blue-500" />
+                      My Profile
+                    </Link>
+                    <Link 
+                      href="/client/orders" 
+                      className="flex items-center px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-300 font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Package size={20} className="mr-3 text-blue-500" />
+                      My Orders
+                    </Link>
+                  </>
+                )}
               </div>
 
               {/* Mobile Quick Actions */}

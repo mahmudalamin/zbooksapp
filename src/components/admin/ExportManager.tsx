@@ -21,12 +21,21 @@ export default function ExportManager() {
   const handleExport = async () => {
     setExporting(true)
     try {
-      const params = new URLSearchParams({
-        type: exportType,
-        ...dateRange,
-        ...filters
-      })
+      // Build query parameters properly for URLSearchParams
+      const queryParams: Record<string, string> = {
+        type: exportType
+      }
 
+      // Add date range if values exist
+      if (dateRange.start) queryParams.start = dateRange.start
+      if (dateRange.end) queryParams.end = dateRange.end
+
+      // Add filters, converting boolean to string
+      if (filters.status) queryParams.status = filters.status
+      if (filters.category) queryParams.category = filters.category
+      queryParams.includeInactive = filters.includeInactive.toString()
+
+      const params = new URLSearchParams(queryParams)
       const response = await fetch(`/api/admin/export?${params}`)
       
       if (!response.ok) {
@@ -205,4 +214,3 @@ export default function ExportManager() {
     </div>
   )
 }
-

@@ -6,10 +6,12 @@ import CouponForm from '@/components/admin/CouponForm'
 export default async function EditCouponPage({ 
   params 
 }: { 
-  params: { id: string } 
+  params: Promise<{ id: string }> 
 }) {
+  const { id } = await params;
+  
   const coupon = await prisma.coupon.findUnique({
-    where: { id: params.id }
+    where: { id }
   })
 
   if (!coupon) {
@@ -23,4 +25,3 @@ export default async function EditCouponPage({
     </div>
   )
 }
-

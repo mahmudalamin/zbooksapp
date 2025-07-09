@@ -40,25 +40,15 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-              <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
+              <li><Link href="/client/about" className="text-gray-400 hover:text-white">About Us</Link></li>
+              <li><Link href="/client/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               <li><Link href="/shipping" className="text-gray-400 hover:text-white">Shipping Info</Link></li>
               <li><Link href="/returns" className="text-gray-400 hover:text-white">Returns</Link></li>
               <li><Link href="/faq" className="text-gray-400 hover:text-white">FAQ</Link></li>
             </ul>
           </div>
 
-          {/* Categories */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Categories</h3>
-            <ul className="space-y-2">
-              <li><Link href="/products?category=fiction" className="text-gray-400 hover:text-white">Fiction</Link></li>
-              <li><Link href="/products?category=non-fiction" className="text-gray-400 hover:text-white">Non-Fiction</Link></li>
-              <li><Link href="/products?category=science" className="text-gray-400 hover:text-white">Science</Link></li>
-              <li><Link href="/products?category=technology" className="text-gray-400 hover:text-white">Technology</Link></li>
-              <li><Link href="/products?category=history" className="text-gray-400 hover:text-white">History</Link></li>
-            </ul>
-          </div>
+          
 
           {/* Newsletter */}
           <div>

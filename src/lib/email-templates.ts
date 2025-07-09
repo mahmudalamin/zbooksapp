@@ -3,6 +3,8 @@ interface Order {
   orderNumber: string
   total: number
   status: string
+  paymentMethod?: string
+  paymentStatus?: string
   orderItems: Array<{
     product: { name: string }
     quantity: number
@@ -10,6 +12,16 @@ interface Order {
   }>
   user?: { name: string }
   email: string
+  shippingAddress?: {
+    firstName: string
+    lastName: string
+    address1: string
+    address2?: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+  }
 }
 
 export const orderConfirmationTemplate = (order: Order) => {
@@ -24,12 +36,45 @@ export const orderConfirmationTemplate = (order: Order) => {
           ${item.quantity}
         </td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">
-          $${item.price.toFixed(2)}
+          $${(item.price * item.quantity).toFixed(2)}
         </td>
       </tr>
     `
     )
     .join('')
+
+  const isPaymentOnDelivery = order.paymentMethod === 'cod'
+  const paymentMessage = isPaymentOnDelivery 
+    ? 'You will pay cash when your order is delivered to your address.'
+    : 'Your payment has been processed successfully.'
+
+  const shippingAddressHtml = order.shippingAddress ? `
+    <div class="shipping-address">
+      <h3>Shipping Address</h3>
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
+        <p style="margin: 5px 0;">${order.shippingAddress.firstName} ${order.shippingAddress.lastName}</p>
+        <p style="margin: 5px 0;">${order.shippingAddress.address1}</p>
+        ${order.shippingAddress.address2 ? `<p style="margin: 5px 0;">${order.shippingAddress.address2}</p>` : ''}
+        <p style="margin: 5px 0;">${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.postalCode}</p>
+        <p style="margin: 5px 0;">${order.shippingAddress.country}</p>
+      </div>
+    </div>
+  ` : ''
+
+  const codNoticeHtml = isPaymentOnDelivery ? `
+    <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+      <h4 style="color: #92400e; margin-top: 0;">💰 Cash on Delivery</h4>
+      <p style="color: #92400e; margin: 5px 0;">
+        <strong>Amount to pay at delivery: $${order.total.toFixed(2)}</strong>
+      </p>
+      <p style="color: #92400e; margin: 5px 0;">
+        Please have the exact amount ready when your order arrives. Our delivery partner will collect payment at your doorstep.
+      </p>
+      <p style="color: #92400e; margin-bottom: 0; font-size: 14px;">
+        💳 Note: Some delivery partners may also accept card payments or digital payments at delivery.
+      </p>
+    </div>
+  ` : ''
 
   return `
     <!DOCTYPE html>
@@ -47,24 +92,35 @@ export const orderConfirmationTemplate = (order: Order) => {
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         th { background: #f8f9fa; padding: 10px; text-align: left; }
         .total { font-weight: bold; font-size: 18px; text-align: right; margin-top: 10px; }
+        .payment-method { 
+          display: inline-block; 
+          background: ${isPaymentOnDelivery ? '#fef3c7' : '#dcfce7'}; 
+          color: ${isPaymentOnDelivery ? '#92400e' : '#166534'}; 
+          padding: 4px 8px; 
+          border-radius: 4px; 
+          font-size: 14px; 
+        }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; color: #2563eb;">Order Confirmation</h1>
+          <h1 style="margin: 0; color: #2563eb;">✅ Order Confirmation</h1>
         </div>
         
         <div class="content">
           <p>Hi ${order.user?.name || 'Customer'},</p>
           
-          <p>Thank you for your order! We've received your order and are processing it now.</p>
+          <p>Thank you for your order! We've received your order and ${isPaymentOnDelivery ? 'will deliver it to your address' : 'are processing it now'}.</p>
           
           <div class="order-details">
-            <h3>Order Details</h3>
+            <h3 style="margin-top: 0;">Order Details</h3>
             <p><strong>Order Number:</strong> #${order.orderNumber}</p>
             <p><strong>Status:</strong> ${order.status}</p>
+            <p><strong>Payment Method:</strong> <span class="payment-method">${isPaymentOnDelivery ? '💰 Cash on Delivery' : '💳 Credit Card'}</span></p>
           </div>
+
+          ${codNoticeHtml}
           
           <h3>Items Ordered</h3>
           <table>
@@ -72,7 +128,7 @@ export const orderConfirmationTemplate = (order: Order) => {
               <tr>
                 <th>Product</th>
                 <th style="text-align: center;">Quantity</th>
-                <th style="text-align: right;">Price</th>
+                <th style="text-align: right;">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -83,15 +139,20 @@ export const orderConfirmationTemplate = (order: Order) => {
           <div class="total">
             Total: $${order.total.toFixed(2)}
           </div>
+
+          ${shippingAddressHtml}
           
-          <p>We'll send you another email when your order ships.</p>
+          <div style="background: #e0f2fe; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>💬 Payment:</strong> ${paymentMessage}</p>
+            <p style="margin: 5px 0;"><strong>📦 Next Steps:</strong> We'll send you another email when your order ships with tracking information.</p>
+          </div>
           
           <p>Thanks for shopping with us!</p>
         </div>
         
         <div class="footer">
           <p style="margin: 0; color: #6b7280;">
-            If you have any questions, reply to this email or contact our support team.
+            Questions about your order? Reply to this email or contact our support team.
           </p>
         </div>
       </div>
@@ -136,7 +197,7 @@ export const orderStatusUpdateTemplate = (order: Order, previousStatus: string) 
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; color: #2563eb;">Order Status Update</h1>
+          <h1 style="margin: 0; color: #2563eb;">📦 Order Status Update</h1>
         </div>
         
         <div class="content">
@@ -237,4 +298,3 @@ export const lowStockAlertTemplate = (products: Array<{ name: string; stock: num
     </html>
   `
 }
-

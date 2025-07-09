@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       try {
         // Generate unique filename
         const fileExtension = file.name.split('.').pop()
-        const fileName = `${uuidv4()}.${fileExtension}`
+        const fileName = `${randomUUID()}.${fileExtension}`
         const filePath = join(uploadDir, fileName)
 
         // Convert file to buffer and write to disk
@@ -104,7 +104,7 @@ const s3Client = new S3Client({
 
 // Inside the file loop:
 const buffer = Buffer.from(await file.arrayBuffer())
-const fileName = `products/${uuidv4()}.${fileExtension}`
+const fileName = `products/${randomUUID()}.${fileExtension}`
 
 const uploadCommand = new PutObjectCommand({
   Bucket: process.env.AWS_S3_BUCKET,

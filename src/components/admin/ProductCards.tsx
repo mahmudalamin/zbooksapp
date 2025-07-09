@@ -6,7 +6,8 @@ import { Edit, Trash2, Eye, MoreHorizontal, Image as ImageIcon } from 'lucide-re
 import BulkActions from './BulkActions'
 import toast from 'react-hot-toast'
 
-interface Product {
+// Use a type that matches what we're actually passing from EnhancedProductsPage
+type ProductCardItem = {
   id: string
   name: string
   slug: string
@@ -26,7 +27,7 @@ interface Product {
 }
 
 interface ProductCardsProps {
-  products: Product[]
+  products: ProductCardItem[]
 }
 
 export default function ProductCards({ products: initialProducts }: ProductCardsProps) {

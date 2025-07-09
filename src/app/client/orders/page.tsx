@@ -45,7 +45,7 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders')
+      const response = await fetch('/api/client/orders')
       if (response.ok) {
         const data = await response.json()
         setOrders(data)
@@ -141,7 +141,7 @@ export default function OrdersPage() {
                           {order.status}
                         </div>
                         <Link
-                          href={`/orders/${order.orderNumber}`}
+                          href={`/client/orders/${order.orderNumber}`}
                           className="text-blue-600 hover:text-blue-700 font-medium text-sm"
                         >
                           View Details

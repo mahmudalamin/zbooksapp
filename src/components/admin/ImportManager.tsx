@@ -1,9 +1,8 @@
 // components/admin/ImportManager.tsx
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, DragEvent, ChangeEvent } from 'react'
 import { Upload, Download, FileText, AlertCircle, CheckCircle } from 'lucide-react'
-import { useDropzone } from 'react-dropzone'
 import toast from 'react-hot-toast'
 
 interface ImportResult {
@@ -19,16 +18,27 @@ export default function ImportManager() {
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [importType, setImportType] = useState('products')
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return
-
-    const file = acceptedFiles[0]
-    
-    if (!file.name.endsWith('.csv')) {
+  const validateFile = (file: File): boolean => {
+    // Check file type
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
       toast.error('Please upload a CSV file')
-      return
+      return false
     }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB')
+      return false
+    }
+
+    return true
+  }
+
+  const processFile = async (file: File) => {
+    if (!validateFile(file)) return
 
     setImporting(true)
     setResult(null)
@@ -56,16 +66,49 @@ export default function ImportManager() {
     } finally {
       setImporting(false)
     }
-  }, [importType])
+  }
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv']
-    },
-    multiple: false,
-    disabled: importing
-  })
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      processFile(file)
+    }
+    // Reset input value to allow selecting same file again
+    e.target.value = ''
+  }
+
+  const handleDragEnter = (e: DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(true)
+  }
+
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      const file = files[0]
+      processFile(file)
+    }
+  }
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click()
+  }
 
   const downloadTemplate = () => {
     const templates = {
@@ -84,6 +127,15 @@ export default function ImportManager() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* Import Type Selection */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Select Import Type</h3>
@@ -125,7 +177,7 @@ export default function ImportManager() {
         </p>
         <button
           onClick={downloadTemplate}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           <Download className="w-4 h-4 mr-2" />
           Download {importType} Template
@@ -137,16 +189,19 @@ export default function ImportManager() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Upload CSV File</h3>
         
         <div
-          {...getRootProps()}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={openFileDialog}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            isDragActive
+            dragActive
               ? 'border-blue-400 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
           } ${importing ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <input {...getInputProps()} />
           <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          {isDragActive ? (
+          {dragActive ? (
             <p className="text-blue-600">Drop your CSV file here...</p>
           ) : (
             <div>
@@ -154,7 +209,7 @@ export default function ImportManager() {
                 Drag & drop your CSV file here, or click to select
               </p>
               <p className="text-sm text-gray-500">
-                Only CSV files are supported
+                Only CSV files are supported (max 10MB)
               </p>
             </div>
           )}
@@ -186,14 +241,27 @@ export default function ImportManager() {
                 </div>
                 
                 <div className="bg-red-50 border border-red-200 rounded-md p-4 max-h-64 overflow-y-auto">
-                  {result.errors.map((error, index) => (
-                    <div key={index} className="text-sm text-red-700">
-                      Row {error.row}: {error.message}
-                    </div>
-                  ))}
+                  <div className="space-y-1">
+                    {result.errors.map((error, index) => (
+                      <div key={index} className="text-sm text-red-700 font-mono">
+                        <span className="font-bold">Row {error.row}:</span> {error.message}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
+            
+            {/* Summary */}
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+              <h4 className="font-medium text-gray-900 mb-2">Import Summary</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>Total records processed: {result.imported + result.errors.length}</div>
+                <div>Successfully imported: {result.imported}</div>
+                <div>Failed to import: {result.errors.length}</div>
+                <div>Success rate: {Math.round((result.imported / (result.imported + result.errors.length)) * 100)}%</div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -208,9 +276,23 @@ export default function ImportManager() {
           <li>• Image URLs should be publicly accessible</li>
           <li>• Prices should be numeric values without currency symbols</li>
           <li>• Boolean fields should use 'true' or 'false'</li>
+          <li>• Date fields should be in YYYY-MM-DD format</li>
+          <li>• Remove any empty rows at the end of your CSV</li>
         </ul>
       </div>
+
+      {/* Processing Status */}
+      {importing && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-3"></div>
+            <span className="text-yellow-700">Processing your import file...</span>
+          </div>
+          <p className="text-sm text-yellow-600 mt-2">
+            Please wait while we validate and import your data. This may take a few moments.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
-

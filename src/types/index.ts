@@ -1,9 +1,50 @@
 // types/index.ts
+
+// Enums - Define these first since they're referenced in interfaces
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED'
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+  PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED'
+}
+
+export enum AddressType {
+  SHIPPING = 'SHIPPING',
+  BILLING = 'BILLING',
+  BOTH = 'BOTH'
+}
+
+// Types
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
+
+// Interfaces
 export interface User {
   id: string
   name: string | null
   email: string
-  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN'
+  role: UserRole
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  image: string | null
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -32,17 +73,43 @@ export interface Product {
   createdAt: Date
   updatedAt: Date
   category?: Category | null
+  _count?: { orderItems: number }
 }
 
-export interface Category {
+export interface Address {
   id: string
-  name: string
-  slug: string
-  description: string | null
-  image: string | null
-  isActive: boolean
+  userId: string | null
+  firstName: string
+  lastName: string
+  company: string | null
+  address1: string
+  address2: string | null
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  isDefault: boolean
+  type: AddressType
   createdAt: Date
   updatedAt: Date
+}
+
+export interface OrderHistory {
+  id: string
+  orderId: string
+  status: OrderStatus
+  notes: string | null
+  createdAt: Date
+}
+
+export interface OrderItem {
+  id: string
+  orderId: string
+  productId: string
+  quantity: number
+  price: number
+  total: number
+  product: Product
 }
 
 export interface Order {
@@ -67,39 +134,24 @@ export interface Order {
   updatedAt: Date
   user?: User | null
   orderItems: OrderItem[]
+  orderHistory: OrderHistory[]
   shippingAddress?: Address | null
   billingAddress?: Address | null
 }
 
-export interface OrderItem {
+export interface CartItem {
   id: string
-  orderId: string
-  productId: string
+  product: Product
   quantity: number
   price: number
-  total: number
-  product: Product
 }
 
-export interface Address {
-  id: string
-  userId: string | null
-  firstName: string
-  lastName: string
-  company: string | null
-  address1: string
-  address2: string | null
-  city: string
-  state: string
-  postalCode: string
-  country: string
-  isDefault: boolean
-  type: AddressType
-  createdAt: Date
-  updatedAt: Date
+export interface OrderFilters {
+  status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  search?: string
+  page?: number
+  limit?: number
+  dateFrom?: string
+  dateTo?: string
 }
-
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED'
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED'
-export type AddressType = 'SHIPPING' | 'BILLING' | 'BOTH'
-export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
