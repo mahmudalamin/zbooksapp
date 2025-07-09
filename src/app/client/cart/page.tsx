@@ -1,11 +1,11 @@
 // app/cart/page.tsx (Shopping Cart Page)
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Plus, Minus, Trash2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { CartItem } from '@/types'
+import { ArrowLeft, ArrowRight, Minus, Plus, Trash2 } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export default function CartPage() {
@@ -77,7 +77,7 @@ export default function CartPage() {
             Looks like you haven't added any books to your cart yet.
           </p>
           <Link
-            href="/products"
+            href="/client/products"
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
           >
             <ArrowLeft className="mr-2" size={20} />
@@ -121,7 +121,7 @@ export default function CartPage() {
               {/* Product Details */}
               <div className="flex-1 min-w-0">
                 <Link
-                  href={`/products/${item.product.slug}`}
+                  href={`/client/products/${item.product.slug}`}
                   className="font-medium text-gray-900 hover:text-blue-600 line-clamp-2"
                 >
                   {item.product.name}
@@ -214,7 +214,7 @@ export default function CartPage() {
 
             {/* Checkout Button */}
             <Link
-              href="/checkout"
+              href="/client/checkout"
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center block"
             >
               Proceed to Checkout
@@ -223,7 +223,7 @@ export default function CartPage() {
 
             {/* Continue Shopping */}
             <Link
-              href="/products"
+              href="/client/products"
               className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center block mt-3"
             >
               Continue Shopping
