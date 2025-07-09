@@ -1,5 +1,6 @@
 
 // app/admin/analytics/page.tsx (Fixed version without raw SQL)
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/db'
 import AnalyticsCharts from '@/components/admin/AnalyticsCharts'
 import TopProducts from '@/components/admin/TopProducts'
